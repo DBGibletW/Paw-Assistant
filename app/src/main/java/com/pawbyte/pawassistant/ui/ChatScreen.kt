@@ -63,6 +63,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.pawbyte.pawassistant.ChatMessage
@@ -71,7 +72,8 @@ import com.pawbyte.pawassistant.ChatViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatScreen(
-    chatViewModel: ChatViewModel = viewModel()
+    chatViewModel: ChatViewModel = viewModel(),
+    onSignOut: () -> Unit = {}
 ) {
     val uiState by chatViewModel.uiState.collectAsState()
     var inputText by rememberSaveable { mutableStateOf("") }
@@ -112,19 +114,21 @@ fun ChatScreen(
                             shape = CircleShape,
                             color = MaterialTheme.colorScheme.surface,
                             tonalElevation = 2.dp,
-                            modifier = Modifier.size(36.dp)
+                            modifier = Modifier.size(34.dp)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 AssistantLogo(
-                                    modifier = Modifier.size(22.dp)
+                                    modifier = Modifier.size(21.dp)
                                 )
                             }
                         }
-                        Spacer(modifier = Modifier.width(10.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = "Paw Assistant",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.SemiBold
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 },
@@ -135,17 +139,28 @@ fun ChatScreen(
                             inputText = ""
                         },
                         shape = RoundedCornerShape(20.dp),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-                        modifier = Modifier.padding(end = 8.dp)
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
                     ) {
                         PlusIcon(
                             color = MaterialTheme.colorScheme.onSecondaryContainer,
-                            modifier = Modifier.size(15.dp)
+                            modifier = Modifier.size(14.dp)
                         )
-                        Spacer(modifier = Modifier.width(6.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
                         Text(
                             text = "Yeni sohbet",
-                            style = MaterialTheme.typography.labelLarge
+                            style = MaterialTheme.typography.labelMedium
+                        )
+                    }
+
+                    TextButton(
+                        onClick = onSignOut,
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
+                        modifier = Modifier.padding(end = 4.dp)
+                    ) {
+                        Text(
+                            text = "Çıkış",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -470,12 +485,6 @@ private fun AssistantLogo(
         val cx = w * 0.50f
         val cy = h * 0.50f
 
-        val blue = Color(0xFF4285F4)
-        val green = Color(0xFF34A853)
-        val yellow = Color(0xFFFBBC04)
-        val red = Color(0xFFEA4335)
-
-        // Üst Mavi Geometrik Yaprak
         val topPetal = Path().apply {
             moveTo(cx, h * 0.08f)
             cubicTo(w * 0.65f, h * 0.08f, w * 0.68f, h * 0.24f, w * 0.61f, h * 0.38f)
@@ -484,9 +493,8 @@ private fun AssistantLogo(
             cubicTo(w * 0.32f, h * 0.24f, w * 0.35f, h * 0.08f, cx, h * 0.08f)
             close()
         }
-        drawPath(topPetal, color = blue)
+        drawPath(topPetal, color = Color(0xFF4285F4))
 
-        // Sağ Yeşil Geometrik Yaprak
         val rightPetal = Path().apply {
             moveTo(w * 0.92f, cy)
             cubicTo(w * 0.92f, h * 0.65f, w * 0.76f, h * 0.68f, w * 0.62f, h * 0.61f)
@@ -495,9 +503,8 @@ private fun AssistantLogo(
             cubicTo(w * 0.76f, h * 0.32f, w * 0.92f, h * 0.35f, w * 0.92f, cy)
             close()
         }
-        drawPath(rightPetal, color = green)
+        drawPath(rightPetal, color = Color(0xFF34A853))
 
-        // Alt Sarı Geometrik Yaprak
         val bottomPetal = Path().apply {
             moveTo(cx, h * 0.92f)
             cubicTo(w * 0.35f, h * 0.92f, w * 0.32f, h * 0.76f, w * 0.39f, h * 0.62f)
@@ -506,9 +513,8 @@ private fun AssistantLogo(
             cubicTo(w * 0.68f, h * 0.76f, w * 0.65f, h * 0.92f, cx, h * 0.92f)
             close()
         }
-        drawPath(bottomPetal, color = yellow)
+        drawPath(bottomPetal, color = Color(0xFFFBBC04))
 
-        // Sol Kırmızı Geometrik Yaprak
         val leftPetal = Path().apply {
             moveTo(w * 0.08f, cy)
             cubicTo(w * 0.08f, h * 0.35f, w * 0.24f, h * 0.32f, w * 0.38f, h * 0.39f)
@@ -517,9 +523,8 @@ private fun AssistantLogo(
             cubicTo(w * 0.24f, h * 0.68f, w * 0.08f, h * 0.65f, w * 0.08f, cy)
             close()
         }
-        drawPath(leftPetal, color = red)
+        drawPath(leftPetal, color = Color(0xFFEA4335))
 
-        // Merkez Işık Çekirdeği
         drawCircle(
             color = Color.White,
             radius = w * 0.09f,
