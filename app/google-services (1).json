@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "845694226747",
+    "project_id": "paw-assistant-592c2",
+    "storage_bucket": "paw-assistant-592c2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:845694226747:android:da44be53a8e7a4ad89e71e",
+        "android_client_info": {
+          "package_name": "com.pawbyte.pawassistant"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBpTkrE0d5cOvTGg_VRrXPTJXNHCg95IEE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
