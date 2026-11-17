@@ -7,7 +7,7 @@ composeBom = "2026.08.00"
 lifecycleViewmodelCompose = "2.11.0"
 
 [libraries]
-androidx-core-ktx = { group = "androidx.core.ktx", name = "core-ktx", version.ref = "coreKtx" }
+androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
 androidx-compose-ui = { group = "androidx.compose.ui", name = "ui" }
