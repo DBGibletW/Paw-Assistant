@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Lacivert Arka Plan -->
+    <path
+        android:fillColor="#0F172A"
+        android:pathData="M0,0h108v108h-108z" />
+
+    <!-- Yumuşak Mavi Vurgu Dairesi -->
+    <path
+        android:fillColor="#1E3A8A"
+        android:pathData="M54,18A36,36 0 1,1 53.99,18Z" />
+
+    <!-- Geometrik Konuşma Balonu (Mavi-Beyaz) -->
+    <path
+        android:fillColor="#EFF6FF"
+        android:pathData="M34,34 L74,34 C78.4,34 82,37.6 82,42 L82,62 C82,66.4 78.4,70 74,70 L49,70 L37,79 L39,70 L34,70 C29.6,70 26,66.4 26,62 L26,42 C26,37.6 29.6,34 34,34 Z" />
+
+    <!-- Turkuaz 4 Köşeli Parıltı Sembolü -->
+    <path
+        android:fillColor="#06B6D4"
+        android:pathData="M54,40 L57.2,48.8 L66,52 L57.2,55.2 L54,64 L50.8,55.2 L42,52 L50.8,48.8 Z" />
+
+    <!-- Küçük Mavi Parıltı Noktası -->
+    <path
+        android:fillColor="#2563EB"
+        android:pathData="M67,41 L68.3,44.7 L72,46 L68.3,47.3 L67,51 L65.7,47.3 L62,46 L65.7,44.7 Z" />
+
+</vector>
