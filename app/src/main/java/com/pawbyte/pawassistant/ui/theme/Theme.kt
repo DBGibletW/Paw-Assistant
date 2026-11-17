@@ -11,62 +11,40 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
-private val NavyDark = Color(0xFF0F172A)
-private val NavySurface = Color(0xFF1E293B)
-private val BluePrimaryLight = Color(0xFF1D4ED8)
-private val BlueContainerLight = Color(0xFFDBEAFE)
-private val OnBlueContainerLight = Color(0xFF0F172A)
-private val TurquoiseLight = Color(0xFF0891B2)
-private val TurquoiseContainerLight = Color(0xFFCFFAFE)
-private val OnTurquoiseContainerLight = Color(0xFF083344)
-
-private val LightBackground = Color(0xFFF8FAFC)
-private val LightSurface = Color(0xFFFFFFFF)
-private val LightSurfaceVariant = Color(0xFFF1F5F9)
-
-private val BluePrimaryDark = Color(0xFF60A5FA)
-private val OnBluePrimaryDark = Color(0xFF0F172A)
-private val BlueContainerDark = Color(0xFF1E3A8A)
-private val OnBlueContainerDark = Color(0xFFDBEAFE)
-private val TurquoiseDark = Color(0xFF22D3EE)
-private val TurquoiseContainerDark = Color(0xFF164E63)
-private val OnTurquoiseContainerDark = Color(0xFFCFFAFE)
-
-private val DarkBackground = Color(0xFF0B1120)
-private val DarkOnText = Color(0xFFF1F5F9)
-
 private val LightColorScheme = lightColorScheme(
-    primary = BluePrimaryLight,
+    primary = Color(0xFF1A73E8),
     onPrimary = Color.White,
-    primaryContainer = BlueContainerLight,
-    onPrimaryContainer = OnBlueContainerLight,
-    secondary = TurquoiseLight,
+    primaryContainer = Color(0xFFF1F3F4),
+    onPrimaryContainer = Color(0xFF1F1F1F),
+    secondary = Color(0xFF0891B2),
     onSecondary = Color.White,
-    secondaryContainer = TurquoiseContainerLight,
-    onSecondaryContainer = OnTurquoiseContainerLight,
-    background = LightBackground,
-    onBackground = NavyDark,
-    surface = LightSurface,
-    onSurface = NavyDark,
-    surfaceVariant = LightSurfaceVariant,
-    onSurfaceVariant = Color(0xFF475569)
+    secondaryContainer = Color(0xFFE8F0FE),
+    onSecondaryContainer = Color(0xFF174EA6),
+    background = Color(0xFFFFFFFF),
+    onBackground = Color(0xFF1F1F1F),
+    surface = Color(0xFFFFFFFF),
+    onSurface = Color(0xFF1F1F1F),
+    surfaceVariant = Color(0xFFF1F3F4),
+    onSurfaceVariant = Color(0xFF5F6368),
+    outline = Color(0xFFDADCE0)
 )
 
 private val DarkColorScheme = darkColorScheme(
-    primary = BluePrimaryDark,
-    onPrimary = OnBluePrimaryDark,
-    primaryContainer = BlueContainerDark,
-    onPrimaryContainer = OnBlueContainerDark,
-    secondary = TurquoiseDark,
-    onSecondary = NavyDark,
-    secondaryContainer = TurquoiseContainerDark,
-    onSecondaryContainer = OnTurquoiseContainerDark,
-    background = DarkBackground,
-    onBackground = DarkOnText,
-    surface = NavySurface,
-    onSurface = DarkOnText,
-    surfaceVariant = Color(0xFF1E293B),
-    onSurfaceVariant = Color(0xFFCBD5E1)
+    primary = Color(0xFF8AB4F8),
+    onPrimary = Color(0xFF0F172A),
+    primaryContainer = Color(0xFF242B35),
+    onPrimaryContainer = Color(0xFFE8EAED),
+    secondary = Color(0xFF22D3EE),
+    onSecondary = Color(0xFF0F172A),
+    secondaryContainer = Color(0xFF1E3A5F),
+    onSecondaryContainer = Color(0xFFD2E3FC),
+    background = Color(0xFF0F131A),
+    onBackground = Color(0xFFE8EAED),
+    surface = Color(0xFF171C24),
+    onSurface = Color(0xFFE8EAED),
+    surfaceVariant = Color(0xFF242B35),
+    onSurfaceVariant = Color(0xFF9AA0A6),
+    outline = Color(0xFF303642)
 )
 
 @Composable
