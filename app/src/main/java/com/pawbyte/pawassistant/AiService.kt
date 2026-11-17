@@ -18,8 +18,7 @@ data class AiContextMessage(
 )
 
 object AiService {
-    // Kendi Cloudflare Worker adresinizi buraya girin.
-    const val WORKER_URL = "https://paw-assistant-worker.kullanici.workers.dev"
+    const val WORKER_URL = "https://paw-assistant-worker.devy-build-backup.workers.dev/"
 
     private const val CONNECT_TIMEOUT_MS = 20_000
     private const val READ_TIMEOUT_MS = 35_000
