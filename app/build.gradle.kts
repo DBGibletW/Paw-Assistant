@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace = "com.pawbyte.pawassistant"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.pawbyte.pawassistant"
