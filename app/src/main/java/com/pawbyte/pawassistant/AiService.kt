@@ -25,14 +25,6 @@ object AiService {
 
     suspend fun sendConversation(messages: List<AiContextMessage>): Result<String> =
         withContext(Dispatchers.IO) {
-            if (WORKER_URL.isBlank() || WORKER_URL.contains("kullanici.workers.dev")) {
-                return@withContext Result.failure(
-                    IllegalStateException(
-                        "Worker adresi henüz ayarlanmamış. AiService.kt içindeki WORKER_URL değerini kendi Cloudflare Worker adresinizle güncelleyin."
-                    )
-                )
-            }
-
             var connection: HttpURLConnection? = null
             try {
                 val url = URL(WORKER_URL)
@@ -90,15 +82,15 @@ object AiService {
                         Result.success(reply)
                     } else {
                         Result.failure(
-                            IllegalStateException("Sunucudan geçerli bir yanıt alınamadı.")
+                            IllegalStateException("Asistan şu anda yanıt üretemedi. Lütfen tekrar deneyin.")
                         )
                     }
                 } else {
                     val serverError = json?.optString("error", "").orEmpty().trim()
                     val fallbackError = when (responseCode) {
-                        429 -> "Çok fazla istek gönderildi. Lütfen biraz bekleyip tekrar deneyin."
-                        in 500..599 -> "Sunucu şu anda yanıt veremiyor. Lütfen daha sonra tekrar deneyin."
-                        else -> "İstek işlenirken bir sorun oluştu (Kod: $responseCode)."
+                        429 -> "Şu anda çok fazla istek var. Lütfen biraz bekleyip tekrar deneyin."
+                        in 500..599 -> "Asistan servisine şu anda ulaşılamıyor. Lütfen daha sonra tekrar deneyin."
+                        else -> "Yanıt alınırken bir sorun oluştu. Lütfen tekrar deneyin."
                     }
                     Result.failure(
                         IllegalStateException(serverError.ifEmpty { fallbackError })
@@ -106,15 +98,15 @@ object AiService {
                 }
             } catch (_: UnknownHostException) {
                 Result.failure(
-                    IllegalStateException("İnternet bağlantısı veya sunucu adresi bulunamadı.")
+                    IllegalStateException("İnternet bağlantınız yok veya sunucuya ulaşılamıyor.")
                 )
             } catch (_: SocketTimeoutException) {
                 Result.failure(
-                    IllegalStateException("Bağlantı zaman aşımına uğradı. Lütfen tekrar deneyin.")
+                    IllegalStateException("Yanıt beklenirken zaman aşımı oluştu. Lütfen tekrar deneyin.")
                 )
             } catch (_: Exception) {
                 Result.failure(
-                    IllegalStateException("Bağlantı sırasında beklenmeyen bir hata oluştu.")
+                    IllegalStateException("Bağlantı sırasında beklenmeyen bir sorun oluştu.")
                 )
             } finally {
                 connection?.disconnect()
