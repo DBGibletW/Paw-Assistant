@@ -1,8 +1,8 @@
-const GEMINI_MODEL = "gemini-4-hydrogen";
+const GEMINI_MODEL = "gemini-3.1-flash-lite";
 const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
 const SYSTEM_PROMPT =
-  "Sen Pawbyte Studio tarafından geliştirilen Paw Assistant adlı yardımcı yapay zekâ asistanısın. " +
+  "Sen PawByte Studio tarafından geliştirilen Paw Assistant adlı yardımcı yapay zekâ asistanısın. " +
   "Kullanıcılara her zaman anlaşılır, doğal, nazik ve doğru bir Türkçe ile yanıt ver.";
 
 const CORS_HEADERS = {
@@ -28,12 +28,12 @@ export default {
     }
 
     if (request.method !== "POST") {
-      return jsonResponse({ error: "Yalnızca POST istekleri desteklenmektedir." }, 405);
+      return jsonResponse({ error: "Bu işlem desteklenmiyor." }, 405);
     }
 
     if (!env.GEMINI_API_KEY) {
       return jsonResponse(
-        { error: "Sunucu yapılandırması eksik. API anahtarı tanımlanmamış." },
+        { error: "Asistan servisi şu anda kullanılamıyor." },
         500
       );
     }
@@ -42,7 +42,7 @@ export default {
     try {
       payload = await request.json();
     } catch {
-      return jsonResponse({ error: "Geçersiz JSON isteği gönderildi." }, 400);
+      return jsonResponse({ error: "Gönderilen mesaj işlenemedi." }, 400);
     }
 
     const rawMessages = Array.isArray(payload?.messages) ? payload.messages : [];
@@ -54,7 +54,7 @@ export default {
       }));
 
     if (contents.length === 0) {
-      return jsonResponse({ error: "Gönderilecek mesaj bulunamadı." }, 400);
+      return jsonResponse({ error: "Lütfen boş olmayan bir mesaj gönderin." }, 400);
     }
 
     try {
@@ -76,12 +76,24 @@ export default {
 
       if (!geminiResponse.ok) {
         const status = geminiResponse.status;
+        const upstreamMessage =
+          typeof data?.error?.message === "string" ? data.error.message.trim() : "";
+
         if (status === 429) {
           return jsonResponse(
-            { error: "İstek sınırı aşıldı. Lütfen kısa bir süre sonra tekrar deneyin." },
+            { error: "Şu anda çok fazla istek var. Lütfen biraz bekleyip tekrar deneyin." },
             429
           );
         }
+
+        if (status === 400 || status === 404) {
+          const detail = upstreamMessage ? ` (${upstreamMessage})` : "";
+          return jsonResponse(
+            { error: `Yapay zekâ modeli isteği kabul etmedi${detail}.` },
+            status
+          );
+        }
+
         return jsonResponse(
           { error: "Yapay zekâ servisinden yanıt alınamadı. Lütfen tekrar deneyin." },
           502
@@ -98,7 +110,7 @@ export default {
 
       if (!replyText) {
         return jsonResponse(
-          { error: "Model bu istek için metin yanıtı üretemedi." },
+          { error: "Asistan bu istek için yanıt üretemedi." },
           502
         );
       }
@@ -106,7 +118,7 @@ export default {
       return jsonResponse({ reply: replyText }, 200);
     } catch {
       return jsonResponse(
-        { error: "Yapay zekâ sunucusuna bağlanırken bir hata oluştu." },
+        { error: "Asistan servisine bağlanırken bir sorun oluştu." },
         502
       );
     }
