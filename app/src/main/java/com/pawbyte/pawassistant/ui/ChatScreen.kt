@@ -9,12 +9,13 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
@@ -54,6 +55,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -73,6 +75,7 @@ fun ChatScreen(
     val uiState by chatViewModel.uiState.collectAsState()
     var inputText by rememberSaveable { mutableStateOf("") }
     val listState = rememberLazyListState()
+    val isKeyboardOpen = WindowInsets.ime.getBottom(LocalDensity.current) > 0
 
     fun handleSend() {
         val trimmed = inputText.trim()
@@ -81,7 +84,7 @@ fun ChatScreen(
         inputText = ""
     }
 
-    LaunchedEffect(uiState.messages.size, uiState.isLoading) {
+    LaunchedEffect(uiState.messages.size, uiState.isLoading, isKeyboardOpen) {
         if (uiState.messages.isNotEmpty()) {
             val targetIndex = if (uiState.isLoading) {
                 uiState.messages.size
@@ -95,7 +98,7 @@ fun ChatScreen(
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         containerColor = MaterialTheme.colorScheme.background,
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        contentWindowInsets = WindowInsets.safeDrawing,
         topBar = {
             TopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -150,8 +153,7 @@ fun ChatScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .navigationBarsPadding()
-                .imePadding()
+                .consumeWindowInsets(innerPadding)
         ) {
             LazyColumn(
                 state = listState,
@@ -188,13 +190,14 @@ fun ChatScreen(
                 )
             }
 
-            SuggestionChipRow(
-                onSuggestionClick = { suggestion ->
-                    inputText = suggestion
-                }
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
+            if (!isKeyboardOpen) {
+                SuggestionChipRow(
+                    onSuggestionClick = { suggestion ->
+                        inputText = suggestion
+                    }
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
 
             HorizontalDivider(
                 thickness = 0.7.dp,
