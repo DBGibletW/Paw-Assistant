@@ -1,14 +1,14 @@
 package com.pawbyte.pawassistant.ui
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -19,23 +19,19 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledIconButton
-import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SuggestionChip
-import androidx.compose.material3.SuggestionChipDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -62,7 +58,6 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -100,6 +95,7 @@ fun ChatScreen(
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         containerColor = MaterialTheme.colorScheme.background,
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             TopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -110,56 +106,39 @@ fun ChatScreen(
                     Row(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Surface(
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.surface,
-                            tonalElevation = 2.dp,
-                            modifier = Modifier.size(34.dp)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                AssistantLogo(
-                                    modifier = Modifier.size(21.dp)
-                                )
-                            }
-                        }
-                        Spacer(modifier = Modifier.width(8.dp))
+                        AssistantLogo(modifier = Modifier.size(24.dp))
+                        Spacer(modifier = Modifier.width(10.dp))
                         Text(
                             text = "Paw Assistant",
                             style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
+                            fontWeight = FontWeight.Medium,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
                     }
                 },
                 actions = {
-                    FilledTonalButton(
+                    TextButton(
                         onClick = {
                             chatViewModel.startNewChat()
                             inputText = ""
                         },
-                        shape = RoundedCornerShape(20.dp),
                         contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
                     ) {
-                        PlusIcon(
-                            color = MaterialTheme.colorScheme.onSecondaryContainer,
-                            modifier = Modifier.size(14.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
                         Text(
                             text = "Yeni sohbet",
-                            style = MaterialTheme.typography.labelMedium
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
-
                     TextButton(
                         onClick = onSignOut,
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
                         modifier = Modifier.padding(end = 4.dp)
                     ) {
                         Text(
                             text = "Çıkış",
-                            style = MaterialTheme.typography.labelMedium,
+                            style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -174,24 +153,19 @@ fun ChatScreen(
                 .navigationBarsPadding()
                 .imePadding()
         ) {
-            if (uiState.messages.isEmpty()) {
-                WelcomeSection(
-                    onSuggestionClick = { suggestion ->
-                        inputText = suggestion
-                    },
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth()
-                )
-            } else {
-                LazyColumn(
-                    state = listState,
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth(),
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
+            LazyColumn(
+                state = listState,
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                if (uiState.messages.isEmpty()) {
+                    item(key = "welcome_greeting") {
+                        WelcomeGreetingBubble()
+                    }
+                } else {
                     items(uiState.messages, key = { it.id }) { message ->
                         MessageBubble(message = message)
                     }
@@ -214,84 +188,55 @@ fun ChatScreen(
                 )
             }
 
+            SuggestionChipRow(
+                onSuggestionClick = { suggestion ->
+                    inputText = suggestion
+                }
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            HorizontalDivider(
+                thickness = 0.7.dp,
+                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+            )
+
             MessageInputBar(
                 value = inputText,
                 enabled = !uiState.isLoading,
                 onValueChange = { inputText = it },
                 onSendClick = { handleSend() },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp)
+                modifier = Modifier.fillMaxWidth()
             )
         }
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun WelcomeSection(
-    onSuggestionClick: (String) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val suggestions = listOf(
-        "Bir şey öğren",
-        "Fikir üret",
-        "Metin yaz"
-    )
-
+private fun WelcomeGreetingBubble() {
     Column(
-        modifier = modifier
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 24.dp, vertical = 16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp),
+        horizontalAlignment = Alignment.Start
     ) {
         Surface(
-            shape = RoundedCornerShape(24.dp),
+            shape = RoundedCornerShape(
+                topStart = 4.dp,
+                topEnd = 20.dp,
+                bottomStart = 20.dp,
+                bottomEnd = 20.dp
+            ),
             color = MaterialTheme.colorScheme.surface,
-            tonalElevation = 2.dp,
-            modifier = Modifier.size(76.dp)
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+            modifier = Modifier.widthIn(max = 310.dp)
         ) {
-            Box(contentAlignment = Alignment.Center) {
-                AssistantLogo(
-                    modifier = Modifier.size(46.dp)
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(22.dp))
-
-        Text(
-            text = "Merhaba, ben Paw Assistant. Sana nasıl yardımcı olabilirim?",
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onBackground,
-            textAlign = TextAlign.Center
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            suggestions.forEach { suggestion ->
-                SuggestionChip(
-                    onClick = { onSuggestionClick(suggestion) },
-                    shape = RoundedCornerShape(20.dp),
-                    colors = SuggestionChipDefaults.suggestionChipColors(
-                        containerColor = MaterialTheme.colorScheme.surface,
-                        labelColor = MaterialTheme.colorScheme.onSurface
-                    ),
-                    label = {
-                        Text(
-                            text = suggestion,
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-                )
-            }
+            Text(
+                text = "Merhaba, ben Paw Assistant. Nasıl yardımcı olabilirim?",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(horizontal = 18.dp, vertical = 14.dp)
+            )
         }
     }
 }
@@ -299,40 +244,66 @@ private fun WelcomeSection(
 @Composable
 private fun MessageBubble(message: ChatMessage) {
     val isUser = message.isFromUser
-    val bubbleShape = if (isUser) {
-        RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp, bottomStart = 22.dp, bottomEnd = 6.dp)
-    } else {
-        RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp, bottomStart = 6.dp, bottomEnd = 22.dp)
-    }
 
-    val containerColor = if (isUser) {
-        MaterialTheme.colorScheme.primaryContainer
-    } else {
-        MaterialTheme.colorScheme.surface
-    }
-
-    val contentColor = if (isUser) {
-        MaterialTheme.colorScheme.onPrimaryContainer
-    } else {
-        MaterialTheme.colorScheme.onSurface
-    }
-
-    Box(
-        modifier = Modifier.fillMaxWidth(),
-        contentAlignment = if (isUser) Alignment.CenterEnd else Alignment.CenterStart
-    ) {
-        Surface(
-            shape = bubbleShape,
-            color = containerColor,
-            tonalElevation = if (isUser) 0.dp else 2.dp,
-            modifier = Modifier.widthIn(max = 320.dp)
+    if (isUser) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.End
         ) {
-            Text(
-                text = message.text,
-                color = contentColor,
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
-            )
+            Surface(
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                modifier = Modifier.size(22.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    UserAvatarIcon(
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(13.dp)
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            Surface(
+                shape = RoundedCornerShape(
+                    topStart = 20.dp,
+                    topEnd = 4.dp,
+                    bottomStart = 20.dp,
+                    bottomEnd = 20.dp
+                ),
+                color = MaterialTheme.colorScheme.primaryContainer,
+                modifier = Modifier.widthIn(max = 300.dp)
+            ) {
+                Text(
+                    text = message.text,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 11.dp)
+                )
+            }
+        }
+    } else {
+        Box(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.CenterStart
+        ) {
+            Surface(
+                shape = RoundedCornerShape(
+                    topStart = 4.dp,
+                    topEnd = 20.dp,
+                    bottomStart = 20.dp,
+                    bottomEnd = 20.dp
+                ),
+                color = MaterialTheme.colorScheme.surface,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                modifier = Modifier.widthIn(max = 320.dp)
+            ) {
+                Text(
+                    text = message.text,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+                )
+            }
         }
     }
 }
@@ -344,24 +315,62 @@ private fun LoadingBubble() {
         contentAlignment = Alignment.CenterStart
     ) {
         Surface(
-            shape = RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp, bottomStart = 6.dp, bottomEnd = 22.dp),
+            shape = RoundedCornerShape(
+                topStart = 4.dp,
+                topEnd = 20.dp,
+                bottomStart = 20.dp,
+                bottomEnd = 20.dp
+            ),
             color = MaterialTheme.colorScheme.surface,
-            tonalElevation = 2.dp
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
         ) {
             Row(
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 CircularProgressIndicator(
-                    modifier = Modifier.size(18.dp),
+                    modifier = Modifier.size(16.dp),
                     strokeWidth = 2.dp,
-                    color = MaterialTheme.colorScheme.secondary
+                    color = MaterialTheme.colorScheme.primary
                 )
                 Spacer(modifier = Modifier.width(10.dp))
                 Text(
                     text = "Yanıt hazırlanıyor...",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SuggestionChipRow(
+    onSuggestionClick: (String) -> Unit
+) {
+    val suggestions = listOf(
+        "Bir şey öğren",
+        "Fikir üret",
+        "Metin yaz",
+        "Özet çıkar"
+    )
+
+    LazyRow(
+        contentPadding = PaddingValues(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        items(suggestions) { suggestion ->
+            Surface(
+                onClick = { onSuggestionClick(suggestion) },
+                shape = RoundedCornerShape(50),
+                color = MaterialTheme.colorScheme.surface,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+            ) {
+                Text(
+                    text = suggestion,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 9.dp)
                 )
             }
         }
@@ -376,13 +385,13 @@ private fun ErrorBanner(
 ) {
     Surface(
         modifier = modifier,
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(14.dp),
         color = MaterialTheme.colorScheme.errorContainer
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 8.dp),
+                .padding(horizontal = 14.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
@@ -413,14 +422,12 @@ private fun MessageInputBar(
 
     Surface(
         modifier = modifier,
-        shape = RoundedCornerShape(28.dp),
-        color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 3.dp
+        color = MaterialTheme.colorScheme.background
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 14.dp, end = 6.dp, top = 4.dp, bottom = 4.dp),
+                .padding(horizontal = 12.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             TextField(
@@ -430,8 +437,9 @@ private fun MessageInputBar(
                 modifier = Modifier.weight(1f),
                 placeholder = {
                     Text(
-                        text = if (enabled) "Paw Assistant'a sorun..." else "Yanıt bekleniyor...",
-                        style = MaterialTheme.typography.bodyLarge
+                        text = if (enabled) "Mesaj yazın" else "Yanıt bekleniyor...",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 },
                 maxLines = 4,
@@ -449,26 +457,20 @@ private fun MessageInputBar(
                 )
             )
 
-            Spacer(modifier = Modifier.width(6.dp))
-
-            FilledIconButton(
+            IconButton(
                 onClick = onSendClick,
                 enabled = canSend,
-                colors = IconButtonDefaults.filledIconButtonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
-                ),
                 modifier = Modifier
                     .size(44.dp)
                     .semantics { contentDescription = "Gönder" }
             ) {
                 SendArrowIcon(
                     color = if (canSend) {
-                        MaterialTheme.colorScheme.onPrimary
+                        MaterialTheme.colorScheme.primary
                     } else {
-                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
                     },
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier.size(22.dp)
                 )
             }
         }
@@ -534,26 +536,26 @@ private fun AssistantLogo(
 }
 
 @Composable
-private fun PlusIcon(
+private fun UserAvatarIcon(
     color: Color,
     modifier: Modifier = Modifier
 ) {
     Canvas(modifier = modifier) {
-        val stroke = size.minDimension * 0.14f
-        drawLine(
+        val w = size.width
+        val h = size.height
+
+        drawCircle(
             color = color,
-            start = Offset(size.width / 2f, size.height * 0.15f),
-            end = Offset(size.width / 2f, size.height * 0.85f),
-            strokeWidth = stroke,
-            cap = StrokeCap.Round
+            radius = w * 0.22f,
+            center = Offset(w * 0.50f, h * 0.34f)
         )
-        drawLine(
-            color = color,
-            start = Offset(size.width * 0.15f, size.height / 2f),
-            end = Offset(size.width * 0.85f, size.height / 2f),
-            strokeWidth = stroke,
-            cap = StrokeCap.Round
-        )
+
+        val shoulders = Path().apply {
+            moveTo(w * 0.16f, h * 0.88f)
+            cubicTo(w * 0.16f, h * 0.62f, w * 0.84f, h * 0.62f, w * 0.84f, h * 0.88f)
+            close()
+        }
+        drawPath(path = shoulders, color = color)
     }
 }
 
