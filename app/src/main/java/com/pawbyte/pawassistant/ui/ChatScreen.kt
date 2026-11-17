@@ -2,14 +2,18 @@ package com.pawbyte.pawassistant.ui
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -23,6 +27,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -40,11 +45,13 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -58,9 +65,15 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.pawbyte.pawassistant.ChatMessage
@@ -298,14 +311,262 @@ private fun MessageBubble(message: ChatMessage) {
                 ),
                 color = MaterialTheme.colorScheme.surface,
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-                modifier = Modifier.widthIn(max = 320.dp)
+                modifier = Modifier.widthIn(max = 340.dp)
             ) {
-                Text(
+                FormattedAssistantText(
                     text = message.text,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    style = MaterialTheme.typography.bodyLarge,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
                 )
+            }
+        }
+    }
+}
+
+private sealed interface MarkdownBlock {
+    data class TextBlock(val text: String) : MarkdownBlock
+    data class TableBlock(
+        val headers: List<String>,
+        val rows: List<List<String>>
+    ) : MarkdownBlock
+}
+
+@Composable
+private fun FormattedAssistantText(
+    text: String,
+    modifier: Modifier = Modifier
+) {
+    val blocks = remember(text) { parseMarkdownBlocks(text) }
+
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        blocks.forEach { block ->
+            when (block) {
+                is MarkdownBlock.TextBlock -> {
+                    Text(
+                        text = parseInlineMarkdown(block.text),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                }
+
+                is MarkdownBlock.TableBlock -> {
+                    MarkdownTable(
+                        headers = block.headers,
+                        rows = block.rows
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MarkdownTable(
+    headers: List<String>,
+    rows: List<List<String>>
+) {
+    val columnCount = headers.size
+    if (columnCount == 0) return
+
+    val columnWidths: List<Dp> = remember(headers, rows) {
+        List(columnCount) { col ->
+            val maxChars = maxOf(
+                headers[col].length,
+                rows.maxOfOrNull { row -> row.getOrElse(col) { "" }.length } ?: 0
+            )
+            (maxChars * 8 + 24).coerceIn(92, 188).dp
+        }
+    }
+
+    val borderColor = MaterialTheme.colorScheme.outline
+
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        border = BorderStroke(1.dp, borderColor),
+        color = MaterialTheme.colorScheme.surface
+    ) {
+        Column(
+            modifier = Modifier.horizontalScroll(rememberScrollState())
+        ) {
+            Row(
+                modifier = Modifier
+                    .height(IntrinsicSize.Max)
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                headers.forEachIndexed { index, header ->
+                    Box(
+                        modifier = Modifier
+                            .width(columnWidths[index])
+                            .fillMaxHeight()
+                            .padding(horizontal = 10.dp, vertical = 8.dp),
+                        contentAlignment = Alignment.CenterStart
+                    ) {
+                        Text(
+                            text = parseInlineMarkdown(header),
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                    if (index < columnCount - 1) {
+                        VerticalDivider(
+                            modifier = Modifier.fillMaxHeight(),
+                            thickness = 1.dp,
+                            color = borderColor
+                        )
+                    }
+                }
+            }
+
+            rows.forEach { row ->
+                HorizontalDivider(thickness = 1.dp, color = borderColor)
+                Row(
+                    modifier = Modifier.height(IntrinsicSize.Max)
+                ) {
+                    for (col in 0 until columnCount) {
+                        val cellText = row.getOrElse(col) { "" }
+                        Box(
+                            modifier = Modifier
+                                .width(columnWidths[col])
+                                .fillMaxHeight()
+                                .padding(horizontal = 10.dp, vertical = 8.dp),
+                            contentAlignment = Alignment.CenterStart
+                        ) {
+                            Text(
+                                text = parseInlineMarkdown(cellText),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                        if (col < columnCount - 1) {
+                            VerticalDivider(
+                                modifier = Modifier.fillMaxHeight(),
+                                thickness = 1.dp,
+                                color = borderColor
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+private fun parseMarkdownBlocks(text: String): List<MarkdownBlock> {
+    val lines = text.lines()
+    val blocks = mutableListOf<MarkdownBlock>()
+    val paragraphBuffer = mutableListOf<String>()
+
+    fun flushParagraph() {
+        val joined = paragraphBuffer.joinToString("\n").trim()
+        if (joined.isNotEmpty()) {
+            blocks.add(MarkdownBlock.TextBlock(joined))
+        }
+        paragraphBuffer.clear()
+    }
+
+    var idx = 0
+    while (idx < lines.size) {
+        if (idx + 1 < lines.size && lines[idx].contains('|') && isTableSeparatorLine(lines[idx + 1])) {
+            flushParagraph()
+            val headers = parseTableRow(lines[idx])
+            idx += 2
+            val rows = mutableListOf<List<String>>()
+            while (idx < lines.size && lines[idx].contains('|') && lines[idx].trim().isNotEmpty()) {
+                rows.add(parseTableRow(lines[idx]))
+                idx++
+            }
+            if (headers.isNotEmpty()) {
+                blocks.add(MarkdownBlock.TableBlock(headers = headers, rows = rows))
+            }
+        } else {
+            paragraphBuffer.add(lines[idx])
+            idx++
+        }
+    }
+    flushParagraph()
+    return blocks
+}
+
+private fun isTableSeparatorLine(line: String): Boolean {
+    val trimmed = line.trim()
+    if (!trimmed.contains('|') || !trimmed.contains('-')) return false
+    val cells = parseTableRow(trimmed)
+    return cells.isNotEmpty() && cells.all { cell ->
+        cell.isNotEmpty() && cell.all { ch -> ch == '-' || ch == ':' || ch == ' ' }
+    }
+}
+
+private fun parseTableRow(line: String): List<String> {
+    var trimmed = line.trim()
+    if (trimmed.startsWith('|')) trimmed = trimmed.drop(1)
+    if (trimmed.endsWith('|')) trimmed = trimmed.dropLast(1)
+    return trimmed.split('|').map { it.trim() }
+}
+
+private fun parseInlineMarkdown(text: String): AnnotatedString = buildAnnotatedString {
+    var i = 0
+    val n = text.length
+    while (i < n) {
+        when {
+            text.startsWith("***", i) -> {
+                val end = text.indexOf("***", i + 3)
+                if (end != -1) {
+                    withStyle(SpanStyle(fontWeight = FontWeight.Bold, fontStyle = FontStyle.Italic)) {
+                        append(text.substring(i + 3, end))
+                    }
+                    i = end + 3
+                } else {
+                    append("***")
+                    i += 3
+                }
+            }
+
+            text.startsWith("**", i) -> {
+                val end = text.indexOf("**", i + 2)
+                if (end != -1) {
+                    withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
+                        append(text.substring(i + 2, end))
+                    }
+                    i = end + 2
+                } else {
+                    append("**")
+                    i += 2
+                }
+            }
+
+            text[i] == '*' -> {
+                val end = text.indexOf('*', i + 1)
+                if (end != -1 && end > i + 1) {
+                    withStyle(SpanStyle(fontStyle = FontStyle.Italic)) {
+                        append(text.substring(i + 1, end))
+                    }
+                    i = end + 1
+                } else {
+                    append('*')
+                    i += 1
+                }
+            }
+
+            text[i] == '_' -> {
+                val end = text.indexOf('_', i + 1)
+                val prevIsSpaceOrStart = i == 0 || text[i - 1].isWhitespace()
+                if (prevIsSpaceOrStart && end != -1 && end > i + 1) {
+                    withStyle(SpanStyle(fontStyle = FontStyle.Italic)) {
+                        append(text.substring(i + 1, end))
+                    }
+                    i = end + 1
+                } else {
+                    append('_')
+                    i += 1
+                }
+            }
+
+            else -> {
+                append(text[i])
+                i += 1
             }
         }
     }
