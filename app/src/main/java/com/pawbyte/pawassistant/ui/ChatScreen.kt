@@ -1,5 +1,12 @@
 package com.pawbyte.pawassistant.ui
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.StartOffset
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.keyframes
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -18,6 +25,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
@@ -32,7 +40,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.IconButton
@@ -574,6 +581,33 @@ private fun parseInlineMarkdown(text: String): AnnotatedString = buildAnnotatedS
 
 @Composable
 private fun LoadingBubble() {
+    val dotColors = listOf(
+        Color(0xFF4285F4), // Mavi
+        Color(0xFFEA4335), // Kırmızı
+        Color(0xFFFBBC04), // Sarı
+        Color(0xFF34A853)  // Yeşil
+    )
+
+    val transition = rememberInfiniteTransition(label = "assistant_typing")
+    val dotOffsets = dotColors.indices.map { index ->
+        transition.animateFloat(
+            initialValue = 0f,
+            targetValue = 0f,
+            animationSpec = infiniteRepeatable(
+                animation = keyframes {
+                    durationMillis = 1200
+                    0f at 0 using FastOutSlowInEasing
+                    -7f at 220 using FastOutSlowInEasing
+                    0f at 440 using FastOutSlowInEasing
+                    0f at 1200
+                },
+                repeatMode = RepeatMode.Restart,
+                initialStartOffset = StartOffset(index * 160)
+            ),
+            label = "typing_dot_$index"
+        )
+    }
+
     Box(
         modifier = Modifier.fillMaxWidth(),
         contentAlignment = Alignment.CenterStart
@@ -589,55 +623,152 @@ private fun LoadingBubble() {
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
         ) {
             Row(
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically
+                modifier = Modifier.padding(horizontal = 18.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(7.dp)
             ) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(16.dp),
-                    strokeWidth = 2.dp,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Spacer(modifier = Modifier.width(10.dp))
-                Text(
-                    text = "Yanıt hazırlanıyor...",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                dotColors.forEachIndexed { index, color ->
+                    val offsetY by dotOffsets[index]
+                    Box(
+                        modifier = Modifier
+                            .size(9.dp)
+                            .offset(y = offsetY.dp)
+                            .background(color = color, shape = CircleShape)
+                    )
+                }
             }
         }
     }
 }
+
+private enum class SuggestionIconType {
+    NONE,
+    LEARN,
+    IDEA
+}
+
+private data class SuggestionItem(
+    val text: String,
+    val iconType: SuggestionIconType = SuggestionIconType.NONE
+)
 
 @Composable
 private fun SuggestionChipRow(
     onSuggestionClick: (String) -> Unit
 ) {
     val suggestions = listOf(
-        "Bir şey öğren",
-        "Fikir üret",
-        "Metin yaz",
-        "Özet çıkar"
+        SuggestionItem("Bir şey öğren", SuggestionIconType.LEARN),
+        SuggestionItem("Fikir üret", SuggestionIconType.IDEA),
+        SuggestionItem("Metin yaz"),
+        SuggestionItem("Özet çıkar")
     )
 
     LazyRow(
         contentPadding = PaddingValues(horizontal = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        items(suggestions) { suggestion ->
+        items(suggestions) { item ->
             Surface(
-                onClick = { onSuggestionClick(suggestion) },
+                onClick = { onSuggestionClick(item.text) },
                 shape = RoundedCornerShape(50),
                 color = MaterialTheme.colorScheme.surface,
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
             ) {
-                Text(
-                    text = suggestion,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 9.dp)
-                )
+                Row(
+                    modifier = Modifier.padding(horizontal = 15.dp, vertical = 9.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    when (item.iconType) {
+                        SuggestionIconType.LEARN -> {
+                            LearnBookIcon(
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                        }
+
+                        SuggestionIconType.IDEA -> {
+                            IdeaSparkleIcon(
+                                color = MaterialTheme.colorScheme.secondary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                        }
+
+                        SuggestionIconType.NONE -> Unit
+                    }
+
+                    Text(
+                        text = item.text,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
             }
         }
+    }
+}
+
+@Composable
+private fun LearnBookIcon(
+    color: Color,
+    modifier: Modifier = Modifier
+) {
+    Canvas(modifier = modifier) {
+        val w = size.width
+        val h = size.height
+        val stroke = size.minDimension * 0.11f
+
+        val bookPath = Path().apply {
+            moveTo(w * 0.50f, h * 0.28f)
+            cubicTo(w * 0.36f, h * 0.20f, w * 0.18f, h * 0.20f, w * 0.10f, h * 0.26f)
+            lineTo(w * 0.10f, h * 0.78f)
+            cubicTo(w * 0.18f, h * 0.72f, w * 0.36f, h * 0.72f, w * 0.50f, h * 0.80f)
+            cubicTo(w * 0.64f, h * 0.72f, w * 0.82f, h * 0.72f, w * 0.90f, h * 0.78f)
+            lineTo(w * 0.90f, h * 0.26f)
+            cubicTo(w * 0.82f, h * 0.20f, w * 0.64f, h * 0.20f, w * 0.50f, h * 0.28f)
+            close()
+        }
+        drawPath(
+            path = bookPath,
+            color = color,
+            style = Stroke(width = stroke, cap = StrokeCap.Round, join = StrokeJoin.Round)
+        )
+        drawLine(
+            color = color,
+            start = Offset(w * 0.50f, h * 0.28f),
+            end = Offset(w * 0.50f, h * 0.80f),
+            strokeWidth = stroke,
+            cap = StrokeCap.Round
+        )
+    }
+}
+
+@Composable
+private fun IdeaSparkleIcon(
+    color: Color,
+    modifier: Modifier = Modifier
+) {
+    Canvas(modifier = modifier) {
+        val w = size.width
+        val h = size.height
+        val cx = w * 0.50f
+        val cy = h * 0.50f
+        val outerR = w * 0.40f
+        val innerR = w * 0.13f
+
+        val sparkle = Path().apply {
+            moveTo(cx, cy - outerR)
+            lineTo(cx + innerR, cy - innerR)
+            lineTo(cx + outerR, cy)
+            lineTo(cx + innerR, cy + innerR)
+            lineTo(cx, cy + outerR)
+            lineTo(cx - innerR, cy + innerR)
+            lineTo(cx - outerR, cy)
+            lineTo(cx - innerR, cy - innerR)
+            close()
+        }
+        drawPath(path = sparkle, color = color)
     }
 }
 
