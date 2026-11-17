@@ -23,6 +23,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FilledTonalButton
@@ -32,16 +33,17 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -57,45 +59,36 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-
-private data class ChatMessage(
-    val id: Long,
-    val text: String,
-    val isFromUser: Boolean
-)
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.pawbyte.pawassistant.ChatMessage
+import com.pawbyte.pawassistant.ChatViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ChatScreen() {
-    val messages = remember { mutableStateListOf<ChatMessage>() }
-    var inputText by remember { mutableStateOf("") }
+fun ChatScreen(
+    chatViewModel: ChatViewModel = viewModel()
+) {
+    val uiState by chatViewModel.uiState.collectAsState()
+    var inputText by rememberSaveable { mutableStateOf("") }
     val listState = rememberLazyListState()
 
-    fun sendMessage(rawText: String) {
-        val trimmed = rawText.trim()
-        if (trimmed.isEmpty()) return
-
-        val now = System.currentTimeMillis()
-        messages.add(
-            ChatMessage(
-                id = now,
-                text = trimmed,
-                isFromUser = true
-            )
-        )
-        messages.add(
-            ChatMessage(
-                id = now + 1,
-                text = "Mesajınız alındı. Yapay zekâ bağlantısı bir sonraki aşamada eklenecektir.",
-                isFromUser = false
-            )
-        )
-        inputText = ""
+    fun handleSend(text: String) {
+        val trimmed = text.trim()
+        if (trimmed.isEmpty() || uiState.isLoading) return
+        chatViewModel.sendMessage(trimmed)
+        if (text == inputText) {
+            inputText = ""
+        }
     }
 
-    LaunchedEffect(messages.size) {
-        if (messages.isNotEmpty()) {
-            listState.animateScrollToItem(messages.lastIndex)
+    LaunchedEffect(uiState.messages.size, uiState.isLoading) {
+        if (uiState.messages.isNotEmpty()) {
+            val targetIndex = if (uiState.isLoading) {
+                uiState.messages.size
+            } else {
+                uiState.messages.lastIndex
+            }
+            listState.animateScrollToItem(targetIndex)
         }
     }
 
@@ -135,7 +128,7 @@ fun ChatScreen() {
                 actions = {
                     FilledTonalButton(
                         onClick = {
-                            messages.clear()
+                            chatViewModel.startNewChat()
                             inputText = ""
                         },
                         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
@@ -162,9 +155,9 @@ fun ChatScreen() {
                 .navigationBarsPadding()
                 .imePadding()
         ) {
-            if (messages.isEmpty()) {
+            if (uiState.messages.isEmpty()) {
                 WelcomeSection(
-                    onPromptClick = { prompt -> sendMessage(prompt) },
+                    onPromptClick = { prompt -> handleSend(prompt) },
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxWidth()
@@ -178,16 +171,33 @@ fun ChatScreen() {
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    items(messages, key = { it.id }) { message ->
+                    items(uiState.messages, key = { it.id }) { message ->
                         MessageBubble(message = message)
+                    }
+
+                    if (uiState.isLoading) {
+                        item(key = "loading_indicator") {
+                            LoadingBubble()
+                        }
                     }
                 }
             }
 
+            uiState.errorMessage?.let { error ->
+                ErrorBanner(
+                    message = error,
+                    onDismiss = { chatViewModel.dismissError() },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 4.dp)
+                )
+            }
+
             MessageInputBar(
                 value = inputText,
+                enabled = !uiState.isLoading,
                 onValueChange = { inputText = it },
-                onSendClick = { sendMessage(inputText) },
+                onSendClick = { handleSend(inputText) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 12.dp)
@@ -204,7 +214,7 @@ private fun WelcomeSection(
     val samplePrompts = listOf(
         "Bugün neler yapabiliriz?",
         "Bana günlük bir plan hazırla",
-        "Kısa bir not düzenlememe yardım et"
+        "Kısa bir metni özetlememe yardım et"
     )
 
     Column(
@@ -307,13 +317,78 @@ private fun MessageBubble(message: ChatMessage) {
 }
 
 @Composable
+private fun LoadingBubble() {
+    Box(
+        modifier = Modifier.fillMaxWidth(),
+        contentAlignment = Alignment.CenterStart
+    ) {
+        Surface(
+            shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp, bottomStart = 4.dp, bottomEnd = 20.dp),
+            color = MaterialTheme.colorScheme.surface,
+            tonalElevation = 2.dp
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(18.dp),
+                    strokeWidth = 2.dp,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.width(10.dp))
+                Text(
+                    text = "Yanıt hazırlanıyor...",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.78f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ErrorBanner(
+    message: String,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(14.dp),
+        color = MaterialTheme.colorScheme.errorContainer
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = message,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onErrorContainer,
+                modifier = Modifier.weight(1f)
+            )
+            TextButton(onClick = onDismiss) {
+                Text(
+                    text = "Kapat",
+                    color = MaterialTheme.colorScheme.onErrorContainer
+                )
+            }
+        }
+    }
+}
+
+@Composable
 private fun MessageInputBar(
     value: String,
+    enabled: Boolean,
     onValueChange: (String) -> Unit,
     onSendClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val canSend = value.isNotBlank()
+    val canSend = enabled && value.isNotBlank()
 
     Surface(
         modifier = modifier,
@@ -330,10 +405,11 @@ private fun MessageInputBar(
             TextField(
                 value = value,
                 onValueChange = onValueChange,
+                enabled = enabled,
                 modifier = Modifier.weight(1f),
                 placeholder = {
                     Text(
-                        text = "Paw Assistant'a yazın...",
+                        text = if (enabled) "Paw Assistant'a yazın..." else "Yanıt bekleniyor...",
                         style = MaterialTheme.typography.bodyLarge
                     )
                 },
@@ -387,14 +463,12 @@ private fun PawEmblem(
         val w = size.width
         val h = size.height
 
-        // Ana pati yastığı
         drawOval(
             color = color,
             topLeft = Offset(w * 0.22f, h * 0.46f),
             size = androidx.compose.ui.geometry.Size(w * 0.56f, h * 0.44f)
         )
 
-        // Parmak izleri
         val toeRadius = w * 0.105f
         drawCircle(color = color, radius = toeRadius, center = Offset(w * 0.20f, h * 0.36f))
         drawCircle(color = color, radius = toeRadius, center = Offset(w * 0.40f, h * 0.22f))
