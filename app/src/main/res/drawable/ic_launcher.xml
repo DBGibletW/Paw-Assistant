@@ -5,29 +5,39 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- Lacivert Arka Plan -->
+    <!-- Yumuşak Açık Zemin (Yuvarlatılmış Kare) -->
     <path
-        android:fillColor="#0F172A"
-        android:pathData="M0,0h108v108h-108z" />
+        android:fillColor="#FFFFFF"
+        android:pathData="M24,8 L84,8 C92.8,8 100,15.2 100,24 L100,84 C100,92.8 92.8,100 84,100 L24,100 C15.2,100 8,92.8 8,84 L8,24 C8,15.2 15.2,8 24,8 Z" />
 
-    <!-- Yumuşak Mavi Vurgu Dairesi -->
+    <!-- İnce Dış Çerçeve ve Hafif Işık Halesi -->
     <path
-        android:fillColor="#1E3A8A"
-        android:pathData="M54,18A36,36 0 1,1 53.99,18Z" />
+        android:fillColor="#F1F5F9"
+        android:pathData="M54,18 A36,36 0 1,1 53.99,18 Z" />
 
-    <!-- Geometrik Konuşma Balonu (Mavi-Beyaz) -->
+    <!-- Üst Yaprak: Mavi -->
     <path
-        android:fillColor="#EFF6FF"
-        android:pathData="M34,34 L74,34 C78.4,34 82,37.6 82,42 L82,62 C82,66.4 78.4,70 74,70 L49,70 L37,79 L39,70 L34,70 C29.6,70 26,66.4 26,62 L26,42 C26,37.6 29.6,34 34,34 Z" />
+        android:fillColor="#4285F4"
+        android:pathData="M54,22 C62,22 65.5,31.5 61.5,41 L54,48.5 L46.5,41 C42.5,31.5 46,22 54,22 Z" />
 
-    <!-- Turkuaz 4 Köşeli Parıltı Sembolü -->
+    <!-- Sağ Yaprak: Yeşil -->
     <path
-        android:fillColor="#06B6D4"
-        android:pathData="M54,40 L57.2,48.8 L66,52 L57.2,55.2 L54,64 L50.8,55.2 L42,52 L50.8,48.8 Z" />
+        android:fillColor="#34A853"
+        android:pathData="M86,54 C86,62 76.5,65.5 67,61.5 L59.5,54 L67,46.5 C76.5,42.5 86,46 86,54 Z" />
 
-    <!-- Küçük Mavi Parıltı Noktası -->
+    <!-- Alt Yaprak: Sarı -->
     <path
-        android:fillColor="#2563EB"
-        android:pathData="M67,41 L68.3,44.7 L72,46 L68.3,47.3 L67,51 L65.7,47.3 L62,46 L65.7,44.7 Z" />
+        android:fillColor="#FBBC04"
+        android:pathData="M54,86 C46,86 42.5,76.5 46.5,67 L54,59.5 L61.5,67 C65.5,76.5 62,86 54,86 Z" />
+
+    <!-- Sol Yaprak: Kırmızı -->
+    <path
+        android:fillColor="#EA4335"
+        android:pathData="M22,54 C22,46 31.5,42.5 41,46.5 L48.5,54 L41,61.5 C31.5,65.5 22,62 22,54 Z" />
+
+    <!-- Merkez Işık Çekirdeği -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,47 A7,7 0 1,1 53.99,47 Z" />
 
 </vector>
