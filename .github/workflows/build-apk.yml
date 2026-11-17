@@ -32,8 +32,8 @@ jobs:
       - name: Android SDK Kurulumu
         uses: android-actions/setup-android@v4
 
-      - name: Android SDK Platform 37 Kurulumu
-        run: sdkmanager "platforms;android-37"
+      - name: Android SDK Platform 36 Kurulumu
+        run: sdkmanager "platforms;android-36"
 
       - name: Gradle 9.5.0 Kurulumu
         uses: gradle/actions/setup-gradle@v6
